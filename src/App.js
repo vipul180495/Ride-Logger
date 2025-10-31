@@ -75,19 +75,43 @@ function App() {
     setLogs(updatedLogs);
   };
 
+  // ✅ NEW: Stop all running conditions
+  const stopAll = () => {
+    const updatedLogs = { ...logs };
+    const updatedTimers = { ...timers };
+
+    Object.keys(updatedTimers).forEach(key => {
+      const duration = Date.now() - updatedTimers[key];
+      updatedLogs[key] = (updatedLogs[key] || 0) + duration;
+      delete updatedTimers[key];
+    });
+
+    setLogs(updatedLogs);
+    setTimers({});
+    setRecentStopped("all");
+    setTimeout(() => setRecentStopped(""), 2000);
+  };
+
+  // CSV Export Function (fixed for Render)
   const exportCSV = () => {
     let csv = "Category,Condition,Minutes\n";
+
     for (let key in logs) {
       const [category, condition] = key.split("-");
       const totalMs = logs[key];
-      csv += `${category},${condition},${formatTime(totalMs)}\n`;
+      const totalMinutes = (totalMs / 60000).toFixed(2); // convert ms to minutes
+      csv += `${category},${condition},${totalMinutes}\n`;
     }
-    const blob = new Blob([csv], { type: "text/csv" });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ride_data.csv";
-    a.click();
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "ride_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getTotalMs = (key) => {
@@ -150,7 +174,12 @@ function App() {
         </tbody>
       </table>
 
-      <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
+      <div style={{
+        marginTop: "20px",
+        display: "flex",
+        justifyContent: "space-between",
+        flexWrap: "wrap"
+      }}>
         {Object.keys(categories).map(category => (
           <button
             key={category}
@@ -169,6 +198,24 @@ function App() {
             Reset {category}
           </button>
         ))}
+
+        {/* 🆕 Stop All Button */}
+        <button
+          onClick={stopAll}
+          style={{
+            padding: "15px 25px",
+            fontSize: "18px",
+            backgroundColor: "#e74c3c",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            cursor: "pointer",
+            marginTop: "10px"
+          }}
+        >
+          Stop All
+        </button>
+
         <button
           onClick={exportCSV}
           style={{
