@@ -5,10 +5,9 @@ const categories = {
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
   Lighting: ["Day", "Dawn", "Lit Night", "Dark Night"],
   Traffic: ["Flow", "Jam"],
-  Speed: ["5–30 km/h", "30–60 km/h", "60–90 km/h", "90–130 km/h", "130–250 km/h"]
+  Speed: ["3-18 mph", "19-37 mph", "38-55 mph", "56-80 mph", "81-155 mph"]
 };
 
-// Convert milliseconds to mm:ss format
 const formatTime = (ms) => {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -22,10 +21,26 @@ function App() {
   const [recentStopped, setRecentStopped] = useState("");
   const [, forceUpdate] = useState(0);
 
+  // new form info state
+  const [formData, setFormData] = useState({
+    Driver: "",
+    Annotator: "",
+    Date: "",
+    Vehicle: "",
+    RSUNo: "",
+    RSUStartDate: "",
+    DriveId: ""
+  });
+
   useEffect(() => {
     const interval = setInterval(() => forceUpdate(n => n + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleConditionClick = (category, condition) => {
     const key = `${category}-${condition}`;
@@ -33,7 +48,6 @@ function App() {
       const updatedTimers = { ...prev };
       let stoppedKey = "";
 
-      // Stop any other running condition in the same category
       categories[category].forEach(cond => {
         const condKey = `${category}-${cond}`;
         if (condKey !== key && updatedTimers[condKey]) {
@@ -44,7 +58,6 @@ function App() {
         }
       });
 
-      // Toggle clicked condition
       if (updatedTimers[key]) {
         const duration = Date.now() - updatedTimers[key];
         setLogs(l => ({ ...l, [key]: (l[key] || 0) + duration }));
@@ -75,7 +88,6 @@ function App() {
     setLogs(updatedLogs);
   };
 
-  // ✅ NEW: Stop all running conditions
   const stopAll = () => {
     const updatedLogs = { ...logs };
     const updatedTimers = { ...timers };
@@ -88,18 +100,25 @@ function App() {
 
     setLogs(updatedLogs);
     setTimers({});
-    setRecentStopped("all");
-    setTimeout(() => setRecentStopped(""), 2000);
   };
 
-  // CSV Export Function (fixed for Render)
   const exportCSV = () => {
-    let csv = "Category,Condition,Minutes\n";
+    stopAll(); // stop everything first
 
+    let csv = "Ride Data Logger Report\n\n";
+    csv += `Driver,${formData.Driver}\n`;
+    csv += `Annotator,${formData.Annotator}\n`;
+    csv += `Date,${formData.Date}\n`;
+    csv += `Vehicle,${formData.Vehicle}\n`;
+    csv += `RSU No,${formData.RSUNo}\n`;
+    csv += `RSU Start Date,${formData.RSUStartDate}\n`;
+    csv += `Drive ID,${formData.DriveId}\n\n`;
+
+    csv += "Category,Condition,Minutes\n";
     for (let key in logs) {
       const [category, condition] = key.split("-");
       const totalMs = logs[key];
-      const totalMinutes = (totalMs / 60000).toFixed(2); // convert ms to minutes
+      const totalMinutes = (totalMs / 60000).toFixed(2);
       csv += `${category},${condition},${totalMinutes}\n`;
     }
 
@@ -123,7 +142,32 @@ function App() {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1 style={{ textAlign: "center" }}>Ride Data Logger</h1>
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
+
+      {/* Input Form Section */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+        gap: "10px",
+        marginBottom: "20px"
+      }}>
+        {Object.keys(formData).map((key) => (
+          <input
+            key={key}
+            name={key}
+            placeholder={key.replace(/([A-Z])/g, " $1")}
+            value={formData[key]}
+            onChange={handleInputChange}
+            style={{
+              padding: "10px",
+              fontSize: "14px",
+              border: "1px solid #ccc",
+              borderRadius: "5px"
+            }}
+          />
+        ))}
+      </div>
+
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ backgroundColor: "#3498db", color: "white" }}>
             <th style={{ border: "1px solid #ccc", padding: "8px" }}>Category</th>
@@ -174,6 +218,7 @@ function App() {
         </tbody>
       </table>
 
+      {/* Buttons Section */}
       <div style={{
         marginTop: "20px",
         display: "flex",
@@ -198,14 +243,12 @@ function App() {
             Reset {category}
           </button>
         ))}
-
-        {/* 🆕 Stop All Button */}
         <button
           onClick={stopAll}
           style={{
             padding: "15px 25px",
-            fontSize: "18px",
-            backgroundColor: "#e74c3c",
+            fontSize: "16px",
+            backgroundColor: "#e67e22",
             color: "white",
             border: "none",
             borderRadius: "10px",
@@ -215,7 +258,6 @@ function App() {
         >
           Stop All
         </button>
-
         <button
           onClick={exportCSV}
           style={{
