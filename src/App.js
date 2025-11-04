@@ -101,7 +101,7 @@ function App() {
     setLogs(updatedLogs);
     setTimers({});
   };
-
+/*
   const exportCSV = () => {
     stopAll(); // stop everything first
 
@@ -131,7 +131,51 @@ function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  };*/
+  const exportCSV = () => {
+  stopAll(); // stop everything first
+
+  // Get current date and time for file name
+  const now = new Date();
+  const date = now.toISOString().split("T")[0];
+  const time = now
+    .toTimeString()
+    .split(" ")[0]
+    .replace(/:/g, "-");
+  const fileName = `RideData_${date}_${time}.csv`;
+
+  let csv = "Ride Data Logger Report\n\n";
+  csv += `Driver,${formData.Driver}\n`;
+  csv += `Annotator,${formData.Annotator}\n`;
+  csv += `Date,${formData.Date}\n`;
+  csv += `Vehicle,${formData.Vehicle}\n`;
+  csv += `RSU No,${formData.RSUNo}\n`;
+  csv += `RSU Start Date,${formData.RSUStartDate}\n`;
+  csv += `Drive ID,${formData.DriveId}\n\n`;
+
+  csv += "Category,Condition,Minutes\n";
+  for (let key in logs) {
+    const [category, condition] = key.split("-");
+    const totalMs = logs[key];
+    const totalMinutes = (totalMs / 60000).toFixed(2);
+    csv += `${category},${condition},${totalMinutes}\n`;
+  }
+
+  // Create and download CSV
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  // Optional: Success message
+  alert("✅ CSV Exported Successfully!");
+};
+
 
   const getTotalMs = (key) => {
     const base = logs[key] || 0;
