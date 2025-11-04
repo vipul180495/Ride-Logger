@@ -21,7 +21,6 @@ function App() {
   const [recentStopped, setRecentStopped] = useState("");
   const [, forceUpdate] = useState(0);
 
-  // new form info state
   const [formData, setFormData] = useState({
     Driver: "",
     Annotator: "",
@@ -33,34 +32,36 @@ function App() {
   });
 
   useEffect(() => {
-    const interval = setInterval(() => forceUpdate(n => n + 1), 1000);
+    const interval = setInterval(() => forceUpdate((n) => n + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleConditionClick = (category, condition) => {
     const key = `${category}-${condition}`;
-    setTimers(prev => {
+    setTimers((prev) => {
       const updatedTimers = { ...prev };
       let stoppedKey = "";
 
-      categories[category].forEach(cond => {
+      // Stop previous condition in same category
+      categories[category].forEach((cond) => {
         const condKey = `${category}-${cond}`;
         if (condKey !== key && updatedTimers[condKey]) {
           const duration = Date.now() - updatedTimers[condKey];
-          setLogs(l => ({ ...l, [condKey]: (l[condKey] || 0) + duration }));
+          setLogs((l) => ({ ...l, [condKey]: (l[condKey] || 0) + duration }));
           delete updatedTimers[condKey];
           stoppedKey = condKey;
         }
       });
 
+      // Start/Stop selected condition
       if (updatedTimers[key]) {
         const duration = Date.now() - updatedTimers[key];
-        setLogs(l => ({ ...l, [key]: (l[key] || 0) + duration }));
+        setLogs((l) => ({ ...l, [key]: (l[key] || 0) + duration }));
         delete updatedTimers[key];
         stoppedKey = key;
       } else {
@@ -79,7 +80,7 @@ function App() {
   const resetCategory = (category) => {
     const updatedLogs = { ...logs };
     const updatedTimers = { ...timers };
-    categories[category].forEach(condition => {
+    categories[category].forEach((condition) => {
       const key = `${category}-${condition}`;
       delete updatedTimers[key];
       delete updatedLogs[key];
@@ -92,7 +93,7 @@ function App() {
     const updatedLogs = { ...logs };
     const updatedTimers = { ...timers };
 
-    Object.keys(updatedTimers).forEach(key => {
+    Object.keys(updatedTimers).forEach((key) => {
       const duration = Date.now() - updatedTimers[key];
       updatedLogs[key] = (updatedLogs[key] || 0) + duration;
       delete updatedTimers[key];
@@ -101,9 +102,14 @@ function App() {
     setLogs(updatedLogs);
     setTimers({});
   };
-/*
+
   const exportCSV = () => {
-    stopAll(); // stop everything first
+    stopAll();
+
+    const now = new Date();
+    const date = now.toISOString().split("T")[0];
+    const time = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+    const fileName = `RideData_${date}_${time}.csv`;
 
     let csv = "Ride Data Logger Report\n\n";
     csv += `Driver,${formData.Driver}\n`;
@@ -113,8 +119,8 @@ function App() {
     csv += `RSU No,${formData.RSUNo}\n`;
     csv += `RSU Start Date,${formData.RSUStartDate}\n`;
     csv += `Drive ID,${formData.DriveId}\n\n`;
-
     csv += "Category,Condition,Minutes\n";
+
     for (let key in logs) {
       const [category, condition] = key.split("-");
       const totalMs = logs[key];
@@ -126,56 +132,13 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "ride_data.csv");
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };*/
-  const exportCSV = () => {
-  stopAll(); // stop everything first
-
-  // Get current date and time for file name
-  const now = new Date();
-  const date = now.toISOString().split("T")[0];
-  const time = now
-    .toTimeString()
-    .split(" ")[0]
-    .replace(/:/g, "-");
-  const fileName = `RideData_${date}_${time}.csv`;
-
-  let csv = "Ride Data Logger Report\n\n";
-  csv += `Driver,${formData.Driver}\n`;
-  csv += `Annotator,${formData.Annotator}\n`;
-  csv += `Date,${formData.Date}\n`;
-  csv += `Vehicle,${formData.Vehicle}\n`;
-  csv += `RSU No,${formData.RSUNo}\n`;
-  csv += `RSU Start Date,${formData.RSUStartDate}\n`;
-  csv += `Drive ID,${formData.DriveId}\n\n`;
-
-  csv += "Category,Condition,Minutes\n";
-  for (let key in logs) {
-    const [category, condition] = key.split("-");
-    const totalMs = logs[key];
-    const totalMinutes = (totalMs / 60000).toFixed(2);
-    csv += `${category},${condition},${totalMinutes}\n`;
-  }
-
-  // Create and download CSV
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", fileName);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-
-  // Optional: Success message
-  alert("✅ CSV Exported Successfully!");
-};
-
+    alert("✅ CSV Exported Successfully!");
+  };
 
   const getTotalMs = (key) => {
     const base = logs[key] || 0;
@@ -184,16 +147,38 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ textAlign: "center" }}>Ride Data Logger</h1>
+    <div
+      style={{
+        padding: "25px",
+        fontFamily: "Segoe UI, sans-serif",
+        backgroundColor: "#0d0d0d",
+        color: "#f5f5f5",
+        minHeight: "100vh"
+      }}
+    >
+      <h1
+        style={{
+          textAlign: "center",
+          color: "#ff3333",
+          textShadow: "0 0 10px #ff0000"
+        }}
+      >
+        🚗 Ride Data Logger
+      </h1>
 
-      {/* Input Form Section */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-        gap: "10px",
-        marginBottom: "20px"
-      }}>
+      {/* Info Form */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "10px",
+          backgroundColor: "#1a1a1a",
+          padding: "15px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+          boxShadow: "0 0 10px #111"
+        }}
+      >
         {Object.keys(formData).map((key) => (
           <input
             key={key}
@@ -204,24 +189,35 @@ function App() {
             style={{
               padding: "10px",
               fontSize: "14px",
-              border: "1px solid #ccc",
-              borderRadius: "5px"
+              border: "1px solid #333",
+              borderRadius: "8px",
+              background: "#222",
+              color: "#f5f5f5"
             }}
           />
         ))}
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      {/* Table */}
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          backgroundColor: "#1a1a1a",
+          borderRadius: "10px",
+          overflow: "hidden"
+        }}
+      >
         <thead>
-          <tr style={{ backgroundColor: "#3498db", color: "white" }}>
-            <th style={{ border: "1px solid #ccc", padding: "8px" }}>Category</th>
-            <th style={{ border: "1px solid #ccc", padding: "8px" }}>Condition</th>
-            <th style={{ border: "1px solid #ccc", padding: "8px" }}>Time</th>
-            <th style={{ border: "1px solid #ccc", padding: "8px" }}>Status</th>
+          <tr style={{ backgroundColor: "#333", color: "#fff" }}>
+            <th style={{ padding: "10px" }}>Category</th>
+            <th style={{ padding: "10px" }}>Condition</th>
+            <th style={{ padding: "10px" }}>Time</th>
+            <th style={{ padding: "10px" }}>Status</th>
           </tr>
         </thead>
         <tbody>
-          {Object.keys(categories).map(category =>
+          {Object.keys(categories).map((category) =>
             categories[category].map((condition, index) => {
               const key = `${category}-${condition}`;
               const active = timers[key];
@@ -229,31 +225,56 @@ function App() {
               const isRecent = recentStopped === key;
 
               return (
-                <tr key={key} style={{ backgroundColor: isRecent ? "#f39c12" : "white" }}>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                <tr
+                  key={key}
+                  style={{
+                    backgroundColor: isRecent
+                      ? "#664400"
+                      : active
+                      ? "#332222"
+                      : "#111",
+                    borderBottom: "1px solid #333"
+                  }}
+                >
+                  <td style={{ padding: "8px", color: "#ff6666" }}>
                     {index === 0 ? category : ""}
                   </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                  <td style={{ padding: "8px" }}>
                     <button
                       onClick={() => handleConditionClick(category, condition)}
                       style={{
                         padding: "8px 12px",
                         fontSize: "14px",
-                        backgroundColor: active ? "#e74c3c" : "#2ecc71",
+                        backgroundColor: active ? "#e74c3c" : "#27ae60",
                         color: "white",
                         border: "none",
                         borderRadius: "5px",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        boxShadow: active
+                          ? "0 0 10px #ff3333"
+                          : "0 0 6px #00ff99"
                       }}
                     >
-                      {condition} {active ? "(Running)" : ""}
+                      {condition} {active ? "⏱" : ""}
                     </button>
                   </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
+                  <td
+                    style={{
+                      textAlign: "center",
+                      padding: "8px",
+                      color: "#f5f5f5"
+                    }}
+                  >
                     {formatTime(totalMs)}
                   </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
-                    {active ? "Running" : isRecent ? "Just Stopped" : ""}
+                  <td
+                    style={{
+                      textAlign: "center",
+                      padding: "8px",
+                      color: active ? "#00ff99" : "#aaa"
+                    }}
+                  >
+                    {active ? "Running" : isRecent ? "Stopped" : ""}
                   </td>
                 </tr>
               );
@@ -262,26 +283,27 @@ function App() {
         </tbody>
       </table>
 
-      {/* Buttons Section */}
-      <div style={{
-        marginTop: "20px",
-        display: "flex",
-        justifyContent: "space-between",
-        flexWrap: "wrap"
-      }}>
-        {Object.keys(categories).map(category => (
+      {/* Buttons */}
+      <div
+        style={{
+          marginTop: "25px",
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "10px"
+        }}
+      >
+        {Object.keys(categories).map((category) => (
           <button
             key={category}
             onClick={() => resetCategory(category)}
             style={{
               padding: "10px 15px",
-              fontSize: "14px",
-              backgroundColor: "#f39c12",
-              color: "white",
+              backgroundColor: "#ff9900",
+              color: "#fff",
               border: "none",
               borderRadius: "8px",
-              cursor: "pointer",
-              marginTop: "10px"
+              cursor: "pointer"
             }}
           >
             Reset {category}
@@ -291,31 +313,27 @@ function App() {
           onClick={stopAll}
           style={{
             padding: "15px 25px",
-            fontSize: "16px",
-            backgroundColor: "#e67e22",
+            backgroundColor: "#c0392b",
             color: "white",
             border: "none",
             borderRadius: "10px",
-            cursor: "pointer",
-            marginTop: "10px"
+            cursor: "pointer"
           }}
         >
-          Stop All
+          ⏹ Stop All
         </button>
         <button
           onClick={exportCSV}
           style={{
             padding: "15px 25px",
-            fontSize: "18px",
-            backgroundColor: "#3498db",
+            backgroundColor: "#2980b9",
             color: "white",
             border: "none",
             borderRadius: "10px",
-            cursor: "pointer",
-            marginTop: "10px"
+            cursor: "pointer"
           }}
         >
-          Export CSV
+          📁 Export CSV
         </button>
       </div>
     </div>
