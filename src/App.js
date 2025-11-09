@@ -148,8 +148,10 @@ function App() {
       const category = key.slice(0, splitIndex);
       const condition = key.slice(splitIndex + 1);
       const totalMs = logs[key];
-      const totalMinutes = (totalMs / 60000).toFixed(2);
-      csv += `${category},${condition},${totalMinutes}\n`;
+      /*const totalMinutes = (totalMs / 60000).toFixed(2);
+      csv += `${category},${condition},${totalMinutes}\n`;*/
+      const formatted = formatTime(totalMs); // use mm:ss
+      csv += `${category},${condition},${formatted}\n`;
     }
 
     if (comment.trim() !== "") {
