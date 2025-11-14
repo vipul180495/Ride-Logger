@@ -108,7 +108,7 @@ function App() {
     setTimers({});
   };
   
-  /*
+  /*=================================working w/o backend=================================
   const exportCSV = () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -170,7 +170,7 @@ function App() {
     URL.revokeObjectURL(url);
     alert("✅ CSV Exported Successfully!");
   };
-  ================================================================================================
+  =========================================== Working with backend but improper csv=====================================================
   const exportCSV = async () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -248,7 +248,8 @@ function App() {
     const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
     const fileName = `RideData_${date}_${time}.csv`;
 
-    let csv = "Ride Data Logger Report\n\n";
+    let csv = "\uFEFF"; 
+    csv += "Ride Data Logger Report\n\n";
     csv += `Driver,${formData.Driver}\n`;
     csv += `Annotator,${formData.Annotator}\n`;
     csv += `Date,${formData.Date}\n`;
