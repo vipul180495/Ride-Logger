@@ -214,10 +214,10 @@ function App() {
     }
 
     try {
-      const response = await fetch("https://ride-logger-backend.onrender.com//send-email", {
+      const response = await fetch("https://ride-logger-backend.onrender.com//send-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: fileName, content: csv })
+        body: JSON.stringify({ filename: fileName, csvContent: csv })
       });
 
       if (response.ok) {
