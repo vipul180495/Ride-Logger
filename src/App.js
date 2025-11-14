@@ -214,7 +214,7 @@ function App() {
     }
 
     try {
-      const response = await fetch("https://ride-logger-backend.onrender.com//send-csv", {
+      const response = await fetch("https://ride-logger-backend.onrender.com/send-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: fileName, csvContent: csv })
