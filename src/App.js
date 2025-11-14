@@ -169,7 +169,8 @@ function App() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     alert("✅ CSV Exported Successfully!");
-  };*/
+  };
+  ================================================================================================
   const exportCSV = async () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -228,6 +229,68 @@ function App() {
       }
     } catch (err) {
       alert(`❌ Error: ${err.message}`);
+    }
+  };*/
+  const exportCSV = async () => {
+    if (!sessionStart) {
+      alert("Please start the session by clicking any condition before exporting!");
+      return;
+    }
+
+    stopAll();
+
+    const sessionEnd = new Date();
+    const sessionDurationMs = sessionEnd - sessionStart;
+
+    const now = new Date();
+    const pad = (num) => num.toString().padStart(2, "0");
+    const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const fileName = `RideData_${date}_${time}.csv`;
+
+    let csv = "Ride Data Logger Report\n\n";
+    csv += `Driver,${formData.Driver}\n`;
+    csv += `Annotator,${formData.Annotator}\n`;
+    csv += `Date,${formData.Date}\n`;
+    csv += `Vehicle,${formData.Vehicle}\n`;
+    csv += `RSU No,${formData.RSUNo}\n`;
+    csv += `RSU Start Date,${formData.RSUStartDate}\n`;
+    csv += `Drive ID,${formData.DriveId}\n`;
+    csv += `Session Start,${sessionStart.toLocaleString()}\n`;
+    csv += `Session End,${sessionEnd.toLocaleString()}\n`;
+    csv += `Session Duration,${formatTime(sessionDurationMs)}\n\n`;
+    csv += "Category,Condition,Minutes\n";
+
+    for (let key in logs) {
+      const splitIndex = key.indexOf("-");
+      const category = key.slice(0, splitIndex);
+      const condition = key.slice(splitIndex + 1);
+      const totalMs = logs[key];
+      const formatted = formatTime(totalMs);
+      csv += `${category},${condition},${formatted}\n`;
+    }
+
+    if (comment.trim() !== "") {
+      csv += `\nComment,${comment.replace(/,/g, " ")}\n`;
+    }
+
+    try {
+      const response = await fetch("https://ride-logger-backend.onrender.com/send-csv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" }, // important
+        body: JSON.stringify({ filename: fileName, csvContent: csv })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        alert(`❌ Failed to send CSV: ${data.error || "Unknown error"}`);
+        return;
+      }
+
+      alert("✅ CSV sent to your email successfully!");
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Network Error: ${err.message}`);
     }
   };
 
