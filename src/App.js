@@ -288,7 +288,7 @@ function App() {
         return;
       }
 
-      alert("✅ CSV sent to your email successfully!");
+      alert("✅ CSV sent to Vipul Prajapati's email successfully!");
     } catch (err) {
       console.error(err);
       alert(`❌ Network Error: ${err.message}`);
