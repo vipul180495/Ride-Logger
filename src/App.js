@@ -108,7 +108,7 @@ function App() {
     setTimers({});
   };
   
-  /*=================================working w/o backend=================================
+  //=================================working w/o backend=================================
   const exportCSV = () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -170,7 +170,7 @@ function App() {
     URL.revokeObjectURL(url);
     alert("✅ CSV Exported Successfully!");
   };
-  =========================================== Working with backend but improper csv=====================================================
+  /*=========================================== Working with backend but improper csv=====================================================
   const exportCSV = async () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -230,7 +230,8 @@ function App() {
     } catch (err) {
       alert(`❌ Error: ${err.message}`);
     }
-  };*/
+  };  =========================================== Working with backend but proper csv=====================================================
+
   const exportCSV = async () => {
     if (!sessionStart) {
       alert("Please start the session by clicking any condition before exporting!");
@@ -293,7 +294,7 @@ function App() {
       console.error(err);
       alert(`❌ Network Error: ${err.message}`);
     }
-  };
+  };*/
 
 
 
