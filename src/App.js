@@ -20,8 +20,8 @@ function App() {
   const [logs, setLogs] = useState({});
   const [recentStopped, setRecentStopped] = useState("");
   const [, forceUpdate] = useState(0);
-  const [comment, setComment] = useState(""); // Comment state
-  const [sessionStart, setSessionStart] = useState(null); // Session start time
+  const [comment, setComment] = useState("");
+  const [sessionStart, setSessionStart] = useState(null);
 
   const [formData, setFormData] = useState({
     Driver: "",
@@ -33,10 +33,44 @@ function App() {
     DriveId: ""
   });
 
+  // ⭐ ALERT STATES ⭐
+  const [notified30, setNotified30] = useState(false);
+  const [notified40, setNotified40] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState("");
+  const [bannerColor, setBannerColor] = useState("");
+
   useEffect(() => {
     const interval = setInterval(() => forceUpdate((n) => n + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Compute total session minutes
+  const sessionMinutes = sessionStart ? Math.floor((Date.now() - sessionStart) / 60000) : 0;
+
+  // ⭐ FIXED ALERT LOGIC (no eslint warnings) ⭐
+  useEffect(() => {
+    if (!sessionStart) return;
+
+    // 30 min
+    if (sessionMinutes === 30 && !notified30) {
+      setBannerMessage("⏰ 30 minutes reached!");
+      setBannerColor("yellow");
+      setNotified30(true);
+    }
+
+    // 40 min
+    if (sessionMinutes === 40 && !notified40) {
+      setBannerMessage("⏰ 40 minutes reached!");
+      setBannerColor("red");
+      setNotified40(true);
+
+      setTimeout(() => {
+        setBannerMessage("");
+        setBannerColor("");
+      }, 5000);
+    }
+
+  }, [sessionMinutes, sessionStart, notified30, notified40]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -44,10 +78,7 @@ function App() {
   };
 
   const handleConditionClick = (category, condition) => {
-    // Start session if not already started
-    if (!sessionStart) {
-      setSessionStart(new Date());
-    }
+    if (!sessionStart) setSessionStart(new Date());
 
     const key = `${category}-${condition}`;
     setTimers((prev) => {
@@ -90,6 +121,7 @@ function App() {
       delete updatedTimers[key];
       delete updatedLogs[key];
     });
+
     setTimers(updatedTimers);
     setLogs(updatedLogs);
   };
@@ -107,11 +139,11 @@ function App() {
     setLogs(updatedLogs);
     setTimers({});
   };
-  
-  //=================================working w/o backend=================================
+
+  // Export CSV locally
   const exportCSV = () => {
     if (!sessionStart) {
-      alert("Please start the session by clicking any condition before exporting!");
+      alert("Please start a session first!");
       return;
     }
 
@@ -120,183 +152,34 @@ function App() {
     const sessionEnd = new Date();
     const sessionDurationMs = sessionEnd - sessionStart;
 
-    //const date = sessionEnd.toISOString().split("T")[0];
-    //const time = sessionEnd.toTimeString().split(" ")[0].replace(/:/g, "-");
-    //const fileName = `RideData_${date}_${time}.csv`;
-    
     const now = new Date();
-    const pad = (num) => num.toString().padStart(2, "0");
+    const pad = (n) => n.toString().padStart(2, "0");
     const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
     const fileName = `RideData_${date}_${time}.csv`;
 
-
     let csv = "Ride Data Logger Report\n\n";
-    csv += `Driver,${formData.Driver}\n`;
-    csv += `Annotator,${formData.Annotator}\n`;
-    csv += `Date,${formData.Date}\n`;
-    csv += `Vehicle,${formData.Vehicle}\n`;
-    csv += `RSU No,${formData.RSUNo}\n`;
-    csv += `RSU Start Date,${formData.RSUStartDate}\n`;
-    csv += `Drive ID,${formData.DriveId}\n`;
+    Object.keys(formData).forEach((f) => (csv += `${f},${formData[f]}\n`));
     csv += `Session Start,${sessionStart.toLocaleString()}\n`;
     csv += `Session End,${sessionEnd.toLocaleString()}\n`;
     csv += `Session Duration,${formatTime(sessionDurationMs)}\n\n`;
     csv += "Category,Condition,Minutes\n";
 
     for (let key in logs) {
-      const splitIndex = key.indexOf("-");
-      const category = key.slice(0, splitIndex);
-      const condition = key.slice(splitIndex + 1);
-      const totalMs = logs[key];
-      //const totalMinutes = (totalMs / 60000).toFixed(2);
-      //csv += `${category},${condition},${totalMinutes}\n`;
-      const formatted = formatTime(totalMs); // use mm:ss
-      csv += `${category},${condition},${formatted}\n`;
+      const split = key.indexOf("-");
+      const category = key.slice(0, split);
+      const condition = key.slice(split + 1);
+      csv += `${category},${condition},${formatTime(logs[key])}\n`;
     }
 
-    if (comment.trim() !== "") {
-      csv += `\nComment,${comment.replace(/,/g, " ")}\n`;
-    }
+    if (comment.trim() !== "") csv += `\nComment,${comment.replace(/,/g, " ")}\n`;
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    alert("✅ CSV Exported Successfully!");
   };
-  /*=========================================== Working with backend but improper csv=====================================================
-  const exportCSV = async () => {
-    if (!sessionStart) {
-      alert("Please start the session by clicking any condition before exporting!");
-      return;
-    }
-
-    stopAll();
-
-    const sessionEnd = new Date();
-    const sessionDurationMs = sessionEnd - sessionStart;
-
-    const now = new Date();
-    const pad = (num) => num.toString().padStart(2, "0");
-    const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-    const fileName = `RideData_${date}_${time}.csv`;
-
-    let csv = "Ride Data Logger Report\n\n";
-    csv += `Driver,${formData.Driver}\n`;
-    csv += `Annotator,${formData.Annotator}\n`;
-    csv += `Date,${formData.Date}\n`;
-    csv += `Vehicle,${formData.Vehicle}\n`;
-    csv += `RSU No,${formData.RSUNo}\n`;
-    csv += `RSU Start Date,${formData.RSUStartDate}\n`;
-    csv += `Drive ID,${formData.DriveId}\n`;
-    csv += `Session Start,${sessionStart.toLocaleString()}\n`;
-    csv += `Session End,${sessionEnd.toLocaleString()}\n`;
-    csv += `Session Duration,${formatTime(sessionDurationMs)}\n\n`;
-    csv += "Category,Condition,Minutes\n";
-
-    for (let key in logs) {
-      const splitIndex = key.indexOf("-");
-      const category = key.slice(0, splitIndex);
-      const condition = key.slice(splitIndex + 1);
-      const totalMs = logs[key];
-      const formatted = formatTime(totalMs);
-      csv += `${category},${condition},${formatted}\n`;
-    }
-
-    if (comment.trim() !== "") {
-      csv += `\nComment,${comment.replace(/,/g, " ")}\n`;
-    }
-
-    try {
-      const response = await fetch("https://ride-logger-backend.onrender.com/send-csv", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: fileName, csvContent: csv })
-      });
-
-      if (response.ok) {
-        alert("✅ CSV sent to your email successfully!");
-      } else {
-        const text = await response.text();
-        alert(`❌ Failed to send CSV: ${text}`);
-      }
-    } catch (err) {
-      alert(`❌ Error: ${err.message}`);
-    }
-  };  =========================================== Working with backend but proper csv=====================================================
-
-  const exportCSV = async () => {
-    if (!sessionStart) {
-      alert("Please start the session by clicking any condition before exporting!");
-      return;
-    }
-
-    stopAll();
-
-    const sessionEnd = new Date();
-    const sessionDurationMs = sessionEnd - sessionStart;
-
-    const now = new Date();
-    const pad = (num) => num.toString().padStart(2, "0");
-    const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-    const fileName = `RideData_${date}_${time}.csv`;
-
-    let csv = "\uFEFF"; 
-    csv += "Ride Data Logger Report\n\n";
-    csv += `Driver,${formData.Driver}\n`;
-    csv += `Annotator,${formData.Annotator}\n`;
-    csv += `Date,${formData.Date}\n`;
-    csv += `Vehicle,${formData.Vehicle}\n`;
-    csv += `RSU No,${formData.RSUNo}\n`;
-    csv += `RSU Start Date,${formData.RSUStartDate}\n`;
-    csv += `Drive ID,${formData.DriveId}\n`;
-    csv += `Session Start,${sessionStart.toLocaleString()}\n`;
-    csv += `Session End,${sessionEnd.toLocaleString()}\n`;
-    csv += `Session Duration,${formatTime(sessionDurationMs)}\n\n`;
-    csv += "Category,Condition,Minutes\n";
-
-    for (let key in logs) {
-      const splitIndex = key.indexOf("-");
-      const category = key.slice(0, splitIndex);
-      const condition = key.slice(splitIndex + 1);
-      const totalMs = logs[key];
-      const formatted = formatTime(totalMs);
-      csv += `${category},${condition},${formatted}\n`;
-    }
-
-    if (comment.trim() !== "") {
-      csv += `\nComment,${comment.replace(/,/g, " ")}\n`;
-    }
-
-    try {
-      const response = await fetch("https://ride-logger-backend.onrender.com/send-csv", {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" }, // important
-        body: JSON.stringify({ filename: fileName, csvContent: csv })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        alert(`❌ Failed to send CSV: ${data.error || "Unknown error"}`);
-        return;
-      }
-
-      alert("✅ CSV sent to Vipul Prajapati's email successfully!");
-    } catch (err) {
-      console.error(err);
-      alert(`❌ Network Error: ${err.message}`);
-    }
-  };*/
-
-
 
   const getTotalMs = (key) => {
     const base = logs[key] || 0;
@@ -306,7 +189,31 @@ function App() {
 
   return (
     <div style={{ padding: "25px", fontFamily: "Segoe UI, sans-serif", backgroundColor: "#0d0d0d", color: "#f5f5f5", minHeight: "100vh" }}>
-      <h1 style={{ textAlign: "center", color: "#ff3333", textShadow: "0 0 10px #ff0000" }}>🚗 Ride Data Logger</h1>
+
+      {/* ALERT BANNER */}
+      {bannerMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            padding: "12px",
+            backgroundColor: bannerColor === "yellow" ? "#ffcc00" : "#ff4444",
+            color: "black",
+            textAlign: "center",
+            fontSize: "18px",
+            fontWeight: "bold",
+            zIndex: 9999
+          }}
+        >
+          {bannerMessage}
+        </div>
+      )}
+
+      <h1 style={{ textAlign: "center", color: "#ff3333", textShadow: "0 0 10px #ff0000" }}>
+        🚗 Ride Data Logger
+      </h1>
 
       {/* Info Form */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "10px", marginBottom: "20px", boxShadow: "0 0 10px #111" }}>
@@ -332,6 +239,7 @@ function App() {
             <th style={{ padding: "10px" }}>Status</th>
           </tr>
         </thead>
+
         <tbody>
           {Object.keys(categories).map((category) =>
             categories[category].map((condition, index) => {
@@ -343,6 +251,7 @@ function App() {
               return (
                 <tr key={key} style={{ backgroundColor: isRecent ? "#664400" : active ? "#332222" : "#111", borderBottom: "1px solid #333" }}>
                   <td style={{ padding: "8px", color: "#ff6666" }}>{index === 0 ? category : ""}</td>
+
                   <td style={{ padding: "8px" }}>
                     <button
                       onClick={() => handleConditionClick(category, condition)}
@@ -360,8 +269,12 @@ function App() {
                       {condition} {active ? "⏱" : ""}
                     </button>
                   </td>
+
                   <td style={{ textAlign: "center", padding: "8px", color: "#f5f5f5" }}>{formatTime(totalMs)}</td>
-                  <td style={{ textAlign: "center", padding: "8px", color: active ? "#00ff99" : "#aaa" }}>{active ? "Running" : isRecent ? "Stopped" : ""}</td>
+
+                  <td style={{ textAlign: "center", padding: "8px", color: active ? "#00ff99" : "#aaa" }}>
+                    {active ? "Running" : isRecent ? "Stopped" : ""}
+                  </td>
                 </tr>
               );
             })
@@ -369,7 +282,7 @@ function App() {
         </tbody>
       </table>
 
-      {/* Comment Box */}
+      {/* Comments */}
       <div style={{ marginTop: "20px", textAlign: "center" }}>
         <textarea
           placeholder="📝 Enter comments here..."
@@ -391,10 +304,18 @@ function App() {
             Reset {category}
           </button>
         ))}
-        <button onClick={stopAll} style={{ padding: "15px 25px", backgroundColor: "#c0392b", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+
+        <button
+          onClick={stopAll}
+          style={{ padding: "15px 25px", backgroundColor: "#c0392b", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}
+        >
           ⏹ Stop All
         </button>
-        <button onClick={exportCSV} style={{ padding: "15px 25px", backgroundColor: "#2980b9", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+
+        <button
+          onClick={exportCSV}
+          style={{ padding: "15px 25px", backgroundColor: "#2980b9", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}
+        >
           📁 Export CSV
         </button>
       </div>
