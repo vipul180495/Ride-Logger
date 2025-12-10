@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
+function App() {
 
+  // 🔥 Intentional crash for testing
+  throw new Error("Intentional error: error crash on load!");
+}
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
@@ -247,10 +251,7 @@ function App() {
               const active = timers[key];
               const totalMs = getTotalMs(key);
               const isRecent = recentStopped === key;
-function App() {
 
-  // 🔥 Intentional crash for testing
-  throw new Error("Intentional error: error crash on load!");
 
               return (
                 <tr key={key} style={{ backgroundColor: isRecent ? "#664400" : active ? "#332222" : "#111", borderBottom: "1px solid #333" }}>
@@ -326,6 +327,6 @@ function App() {
     </div>
   );
 }
-}
+
 
 export default App;
