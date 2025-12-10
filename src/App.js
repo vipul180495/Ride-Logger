@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const categories = {
+ccategories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
   Lighting: ["Day", "Dawn", "Lit Night", "Dark Night"],
