@@ -252,9 +252,6 @@ function App() {
   // 🔥 Intentional crash for testing
   throw new Error("Intentional error: error crash on load!");
 
-  
-}
-
               return (
                 <tr key={key} style={{ backgroundColor: isRecent ? "#664400" : active ? "#332222" : "#111", borderBottom: "1px solid #333" }}>
                   <td style={{ padding: "8px", color: "#ff6666" }}>{index === 0 ? category : ""}</td>
@@ -328,6 +325,7 @@ function App() {
       </div>
     </div>
   );
+}
 }
 
 export default App;
