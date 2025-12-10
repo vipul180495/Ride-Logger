@@ -1,4 +1,4 @@
-8import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 if (process.env.REACT_APP_CRASH_APP === "true") {
   throw new Error("error triggered from Render!");
