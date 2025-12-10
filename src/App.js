@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-categories = {
+const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
   Lighting: ["Day", "Dawn", "Lit Night", "Dark Night"],
@@ -247,6 +247,17 @@ function App() {
               const active = timers[key];
               const totalMs = getTotalMs(key);
               const isRecent = recentStopped === key;
+function App() {
+
+  // 🔥 Intentional crash for testing
+  throw new Error("Intentional error: error crash on load!");
+
+  return (
+    <div>
+      ...
+    </div>
+  );
+}
 
               return (
                 <tr key={key} style={{ backgroundColor: isRecent ? "#664400" : active ? "#332222" : "#111", borderBottom: "1px solid #333" }}>
