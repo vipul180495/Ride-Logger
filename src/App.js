@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+8import React, { useState, useEffect } from "react";
 
  
 const categories = {
@@ -325,7 +325,6 @@ function App() {
       </div>
     </div>
   );
-}
 
 
 export default App;
