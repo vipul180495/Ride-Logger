@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from "react";
 
+// 🔥 Force crash if enabled from Render environment variable
 if (process.env.REACT_APP_CRASH_APP === "true") {
-  throw new Error("error triggered from Render!");
+  throw new Error("Forced error from Render Environment Variable!");
 }
+
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
   Lighting: ["Day", "Dawn", "Lit Night", "Dark Night"],
   Traffic: ["Flow", "Jam"],
-  Speed: ["0-2 mph", "3-18 mph", "19-37 mph", "38-55 mph", "56-80 mph", "81-155 mph"]
+  Speed: [
+    "0-2 mph",
+    "3-18 mph",
+    "19-37 mph",
+    "38-55 mph",
+    "56-80 mph",
+    "81-155 mph"
+  ]
 };
 
 const formatTime = (ms) => {
