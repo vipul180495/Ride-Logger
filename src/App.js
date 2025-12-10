@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
-function App() {
 
-  // 🔥 Intentional crash for testing
-  throw new Error("Intentional error: error crash on load!");
-}
+ 
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
@@ -20,6 +17,8 @@ const formatTime = (ms) => {
 };
 
 function App() {
+// 🔥 Intentional crash for testing
+  throw new Error("Intentional error: error crash on load!");
   const [timers, setTimers] = useState({});
   const [logs, setLogs] = useState({});
   const [recentStopped, setRecentStopped] = useState("");
@@ -327,6 +326,6 @@ function App() {
     </div>
   );
 }
-
+}
 
 export default App;
