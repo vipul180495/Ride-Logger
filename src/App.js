@@ -1,6 +1,8 @@
 8import React, { useState, useEffect } from "react";
 
- 
+if (process.env.REACT_APP_CRASH_APP === "true") {
+  throw new Error("error triggered from Render!");
+}
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
