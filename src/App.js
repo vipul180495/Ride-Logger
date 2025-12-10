@@ -19,8 +19,6 @@ const formatTime = (ms) => {
 };
 
 function App() {
-// 🔥 Intentional crash for testing
-  throw new Error("Intentional error: error crash on load!");
   const [timers, setTimers] = useState({});
   const [logs, setLogs] = useState({});
   const [recentStopped, setRecentStopped] = useState("");
