@@ -252,11 +252,7 @@ function App() {
   // 🔥 Intentional crash for testing
   throw new Error("Intentional error: error crash on load!");
 
-  return (
-    <div>
-      ...
-    </div>
-  );
+  
 }
 
               return (
