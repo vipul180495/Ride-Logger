@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// 🔥 Force crash if enabled from Render environment variable
-if (process.env.REACT_APP_CRASH_APP === "true") {
-  throw new Error("Forced error from Render Environment Variable!");
-}
-
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
