@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from "react";
 import * as faceapi from "face-api.js";
 
-// Replace this with your deployed backend URL
-const BACKEND_URL = "https://ride-logger-backend-2.onrender.com/";
+// Replace this with your deployed backend URL (no trailing slash)
+const BACKEND_URL = "https://ride-logger-backend-2.onrender.com";
 
 const categories = {
   Weather: ["Sunny", "Low Sun", "Cloudy", "Rain", "Fog", "Snow"],
   "Road Type": ["City", "Country", "Highway", "Construction Site", "Tunnel"],
   Lighting: ["Day", "Dawn", "Lit Night", "Dark Night"],
   Traffic: ["Flow", "Jam"],
-  Speed: ["0-2 mph","3-18 mph","19-37 mph","38-55 mph","56-80 mph","81-155 mph"]
+  Speed: [
+    "0-2 mph",
+    "3-18 mph",
+    "19-37 mph",
+    "38-55 mph",
+    "56-80 mph",
+    "81-155 mph"
+  ]
 };
 
 const formatTime = (ms) => {
@@ -20,18 +27,17 @@ const formatTime = (ms) => {
 };
 
 const FaceLockLogger = () => {
-  // Face lock states
   const [locked, setLocked] = useState(true);
   const [videoRef, setVideoRef] = useState(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
-  // Ride Logger states
   const [timers, setTimers] = useState({});
   const [logs, setLogs] = useState({});
   const [recentStopped, setRecentStopped] = useState("");
   const [, forceUpdate] = useState(0);
   const [comment, setComment] = useState("");
   const [sessionStart, setSessionStart] = useState(null);
+
   const [formData, setFormData] = useState({
     Driver: "",
     Annotator: "",
@@ -47,7 +53,7 @@ const FaceLockLogger = () => {
   const [bannerMessage, setBannerMessage] = useState("");
   const [bannerColor, setBannerColor] = useState("");
 
-  // Load face-api models
+  // 🔹 Load face-api models
   useEffect(() => {
     const loadModels = async () => {
       await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
@@ -59,13 +65,13 @@ const FaceLockLogger = () => {
     loadModels();
   }, []);
 
-  // Force re-render for timers
+  // 🔹 Force re-render every second for timers
   useEffect(() => {
     const interval = setInterval(() => forceUpdate(n => n + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Alerts logic
+  // 🔹 Alerts logic
   const sessionMinutes = sessionStart ? Math.floor((Date.now() - sessionStart) / 60000) : 0;
   useEffect(() => {
     if (!sessionStart) return;
@@ -82,9 +88,8 @@ const FaceLockLogger = () => {
     }
   }, [sessionMinutes, sessionStart, notified30, notified40]);
 
-  // Start camera
+  // 🔹 Camera
   const startCamera = async (video) => {
-    if (!video) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       video.srcObject = stream;
@@ -93,63 +98,71 @@ const FaceLockLogger = () => {
     }
   };
 
-  // Face functions
+  // 🔹 Face functions
   const registerFace = async () => {
     if (!videoRef) return;
-    if (!modelsLoaded) return alert("Models are still loading, please wait...");
-
-    if (!videoRef.srcObject) await startCamera(videoRef);
-
     const detection = await faceapi
-      .detectSingleFace(videoRef, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 }))
+      .detectSingleFace(videoRef, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
       .withFaceDescriptor();
 
     if (!detection) return alert("No face detected");
 
-    await fetch(`${BACKEND_URL}/register-face`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ descriptor: Array.from(detection.descriptor) }),
-    });
+    try {
+      const res = await fetch(`${BACKEND_URL}/register-face`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ descriptor: Array.from(detection.descriptor) }),
+      });
 
-    alert("✅ Face registered!");
+      const data = await res.json();
+      if (data.success) alert("✅ Face registered!");
+      else alert("Error registering face");
+    } catch (err) {
+      console.error(err);
+      alert("Server error during registration");
+    }
   };
 
   const verifyFace = async () => {
     if (!videoRef) return;
-    if (!modelsLoaded) return alert("Models are still loading, please wait...");
-
-    if (!videoRef.srcObject) await startCamera(videoRef);
-
     const detection = await faceapi
-      .detectSingleFace(videoRef, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 }))
+      .detectSingleFace(videoRef, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
       .withFaceDescriptor();
 
     if (!detection) return alert("No face detected");
 
-    const res = await fetch(`${BACKEND_URL}/verify-face`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ descriptor: Array.from(detection.descriptor) }),
-    });
+    try {
+      const res = await fetch(`${BACKEND_URL}/verify-face`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ descriptor: Array.from(detection.descriptor) }),
+      });
 
-    const data = await res.json();
-    if (data.error) return alert(data.error);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Backend returned non-JSON:", text);
+        return alert("Server error: check backend routes");
+      }
 
-    const savedDescriptor = new Float32Array(data.storedDescriptor);
-    const distance = faceapi.euclideanDistance(detection.descriptor, savedDescriptor);
+      if (data.error) return alert(data.error);
 
-    if (distance < 0.6) {
-      setLocked(false);
-      alert("✅ Face recognized! Logger unlocked.");
-    } else {
-      alert("Face not recognized");
+      const savedDescriptor = new Float32Array(data.storedDescriptor);
+      const distance = faceapi.euclideanDistance(detection.descriptor, savedDescriptor);
+      if (distance < 0.6) setLocked(false);
+      else alert("Face not recognized");
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error during verification");
     }
   };
 
-  // Ride Logger functions
+  // 🔹 Ride Logger functions
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -249,7 +262,7 @@ const FaceLockLogger = () => {
     return base + running;
   };
 
-  // LOCK SCREEN UI
+  // 🔒 LOCK SCREEN UI
   if (locked) {
     return (
       <div style={{ textAlign: "center", padding: "30px" }}>
@@ -259,48 +272,21 @@ const FaceLockLogger = () => {
         <video
           autoPlay
           muted
-          playsInline
           ref={(ref) => {
             if (ref && !videoRef) {
               setVideoRef(ref);
               startCamera(ref);
             }
           }}
-          width="300"
-          style={{ borderRadius: "10px", marginBottom: "15px", border: "2px solid #ff3333" }}
+          width="350"
+          style={{ borderRadius: "10px", marginBottom: "20px" }}
         />
 
         <div>
-          <button
-            onClick={registerFace}
-            style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#27ae60",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              marginRight: "15px",
-              cursor: "pointer",
-              boxShadow: "0 0 10px #00ff99",
-            }}
-          >
+          <button onClick={registerFace} style={{ padding: "15px 30px", fontSize: "18px", marginRight: "15px" }}>
             Register Face
           </button>
-
-          <button
-            onClick={verifyFace}
-            style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#e74c3c",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              boxShadow: "0 0 10px #ff4444",
-            }}
-          >
+          <button onClick={verifyFace} style={{ padding: "15px 30px", fontSize: "18px" }}>
             Unlock
           </button>
         </div>
@@ -308,7 +294,7 @@ const FaceLockLogger = () => {
     );
   }
 
-  // UNLOCKED → Ride Logger UI
+  // ✅ UNLOCKED → Ride Logger UI
   return (
     <div style={{ padding: "25px", fontFamily: "Segoe UI, sans-serif", backgroundColor: "#0d0d0d", color: "#f5f5f5", minHeight: "100vh" }}>
       {/* ALERT BANNER */}
