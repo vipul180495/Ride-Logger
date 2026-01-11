@@ -67,6 +67,8 @@ const FaceLockLogger = () => {
   };
 
   // --- Face registration (with admin approval)
+  //const BACKEND_URL = "https://ride-logger-backend-2.onrender.com"; // your deployed backend
+
   const registerFace = async () => {
     if (!videoRef) return;
     const email = prompt("Enter your email for admin approval:");
@@ -76,7 +78,7 @@ const FaceLockLogger = () => {
       .withFaceLandmarks().withFaceDescriptor();
     if (!detection) return alert("No face detected");
 
-    await fetch(`$https://ride-logger-backend-2.onrender.com/register-face`, {
+    await fetch(`${BACKEND_URL}/register-face`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ descriptor: Array.from(detection.descriptor), email })
